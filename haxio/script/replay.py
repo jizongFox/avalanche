@@ -39,7 +39,7 @@ def main(args):
     device = torch.device(f"cuda:{args.cuda}"
                           if torch.cuda.is_available() and
                              args.cuda >= 0 else "cpu")
-    train_set, val_set = HaxioDataset("/home/jizong/Workspace/avalanche/haxio/.data/medxl_v2", train_aug=True)
+    train_set, val_set = HaxioDataset("../.data/medxl_v2", train_aug=True)
 
     # --- SCENARIO CREATION
     scenario = nc_benchmark(train_set, val_set, 3, task_labels=False, shuffle=False)
@@ -61,7 +61,7 @@ def main(args):
     # CREATE THE STRATEGY INSTANCE (NAIVE)
     cl_strategy = Naive(model, torch.optim.Adam(model.parameters(), lr=0.001),
                         CrossEntropyLoss(),
-                        train_mb_size=128, train_epochs=20, eval_mb_size=100,
+                        train_mb_size=128, train_epochs=8, eval_mb_size=100,
                         device=device,
                         plugins=[ReplayPlugin(mem_size=args.replay_num)],
                         evaluator=eval_plugin

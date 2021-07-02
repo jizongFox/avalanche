@@ -1,5 +1,3 @@
-import argparse
-
 import torch
 from torch.optim import Adam
 
@@ -7,8 +5,8 @@ from avalanche.benchmarks import nc_benchmark
 from avalanche.evaluation.metrics import forgetting_metrics, \
     accuracy_metrics, loss_metrics, bwt_metrics
 from avalanche.logging import InteractiveLogger
+from avalanche.training import Naive
 from avalanche.training.plugins import EvaluationPlugin
-from avalanche.training.strategies import EWC
 from haxio.models import resnet18
 from haxio.script.utils import HaxioDataset
 from haxio.utils import colored_print
@@ -29,7 +27,7 @@ is above 90% but the average accuracy on previou tasks is around 20%.
 """
 
 
-def main(args):
+def main():
     model = resnet18(input_dim=3, num_classes=6)
 
     optimizer = Adam(model.parameters(), lr=0.0001)
@@ -54,9 +52,9 @@ def main(args):
         loggers=[interactive_logger])
 
     # create strategy
-    strategy = EWC(model=model, optimizer=optimizer, criterion=criterion, mode=args.ewc_mode,
-                   train_mb_size=128, train_epochs=8, eval_mb_size=128, device=device,
-                   evaluator=eval_plugin, ewc_lambda=args.ewc_lambda)
+    strategy = Naive(model=model, optimizer=optimizer, criterion=criterion,
+                     train_mb_size=128, train_epochs=8, eval_mb_size=128, device=device,
+                     evaluator=eval_plugin)
     strategy.set_num_samplers_per_epoch(10000)
 
     # train on the selected scenario with the chosen strategy
@@ -73,14 +71,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--ewc_mode', type=str, choices=['separate', 'online'],
-                        default='separate',
-                        help='Choose between EWC and online.')
-    parser.add_argument('--ewc_lambda', type=float, default=0.4,
-                        help='Penalty hyperparameter for EWC')
-
-    args = parser.parse_args()
-
-    main(args)
+    main()

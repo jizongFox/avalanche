@@ -41,7 +41,7 @@ def main(args):
     print('device ', device)
     # ---------
 
-    train_set, val_set = HaxioDataset("/home/jizong/Workspace/avalanche/haxio/.data/medxl_v2", train_aug=True)
+    train_set, val_set = HaxioDataset("../.data/medxl_v2", train_aug=True)
     scenario = nc_benchmark(train_set, val_set, n_experiences=3, task_labels=False)
 
     # ---------
@@ -62,10 +62,11 @@ def main(args):
                                args.feature_size, args.n_classes,
                                eval_mb_size=args.batch_size,
                                train_mb_size=args.batch_size,
-                               train_epochs=40,
+                               train_epochs=8,
                                shrinkage_param=args.shrinkage,
                                streaming_update_sigma=args.plastic_cov,
                                device=device, evaluator=eval_plugin)
+    cl_strategy.set_num_samplers_per_epoch(10000)
 
     warnings.warn(
         "The Deep SLDA example is not perfectly aligned with "
@@ -89,7 +90,7 @@ if __name__ == '__main__':
     parser.add_argument('--cuda', type=int, default=0,
                         help='Select zero-indexed cuda device. -1 to use CPU.')
 
-    parser.add_argument('--n_classes', type=int, default=50)
+    parser.add_argument('--n_classes', type=int, default=6)
     parser.add_argument('--scenario', type=str, default="nc",
                         choices=['ni', 'nc', 'nic', 'nicv2_79', 'nicv2_196',
                                  'nicv2_391'])
@@ -105,7 +106,7 @@ if __name__ == '__main__':
                         default=1e-4)  # shrinkage value
     parser.add_argument('--plastic_cov', type=bool,
                         default=True)  # plastic covariance matrix
-    parser.add_argument('--batch_size', type=int, default=512)
+    parser.add_argument('--batch_size', type=int, default=128)
 
     args = parser.parse_args()
     main(args)

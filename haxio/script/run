@@ -1,0 +1,24 @@
+#!/bin/bash -e
+OUTDIR=log
+mkdir -p $OUTDIR
+
+python naive.py | tee ${OUTDIR}/naive.log
+python ewc.py --ewc_lambda 0.4 | tee ${OUTDIR}/ewc_0.4.log
+python ewc.py --ewc_lambda 0.1 | tee ${OUTDIR}/ewc_0.1.log
+python ewc.py --ewc_lambda 0.8 | tee ${OUTDIR}/ewc_0.8.log
+python ewc.py --ewc_lambda 1.0 | tee ${OUTDIR}/ewc_1.0.log
+python ewc.py --ewc_lambda 5.0 | tee ${OUTDIR}/ewc_5.0.log
+
+python ewc.py --ewc_lambda 0.4 --ewc_mode online | tee ${OUTDIR}/ewco_0.4.log
+python ewc.py --ewc_lambda 0.1 --ewc_mode online | tee ${OUTDIR}/ewco_0.1.log
+python ewc.py --ewc_lambda 0.8 --ewc_mode online | tee ${OUTDIR}/ewco_0.8.log
+python ewc.py --ewc_lambda 1.0 --ewc_mode online | tee ${OUTDIR}/ewco_1.0.log
+python ewc.py --ewc_lambda 5.0 --ewc_mode online | tee ${OUTDIR}/ewco_5.0.log
+
+python replay.py --replay_num 1 | tee ${OUTDIR}/replay_01.log
+python replay.py --replay_num 5 | tee ${OUTDIR}/replay_05.log
+python replay.py --replay_num 10 | tee ${OUTDIR}/replay_10.log
+python replay.py --replay_num 20 | tee ${OUTDIR}/replay_20.log
+python replay.py --replay_num 50 | tee ${OUTDIR}/replay_50.log
+
+python deep_slda.py | tee ${OUTDIR}/slda.log
