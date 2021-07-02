@@ -9,3 +9,7 @@ logs/
 *.pyc
 doc_html/*
 .coverage
+avalanche.egg-info
+venv
+examples/tb_data/
+haxio/.data/

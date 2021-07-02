@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
+
 from .utils import FeatureExtractorBackbone
 
 
@@ -32,13 +33,13 @@ class SLDAResNetModel(nn.Module):
 
     @staticmethod
     def pool_feat(features):
-        feat_size = features.shape[-1]
+        h, w = features.shape[-1], features.shape[-2]
         num_channels = features.shape[1]
         features2 = features.permute(0, 2, 3,
                                      1)  # 1 x feat_size x feat_size x
         # num_channels
         features3 = torch.reshape(features2, (
-            features.shape[0], feat_size * feat_size, num_channels))
+            features.shape[0], h * w, num_channels))
         feat = features3.mean(1)  # mb x num_channels
         return feat
 

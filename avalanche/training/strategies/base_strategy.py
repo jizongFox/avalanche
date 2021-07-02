@@ -9,28 +9,26 @@
 # Website: avalanche.continualai.org                                           #
 ################################################################################
 import logging
+from typing import Optional, Sequence, Union, List
+from typing import TYPE_CHECKING
 
 import torch
-from torch.utils.data import DataLoader
-from typing import Optional, Sequence, Union, List
-
 from torch.nn import Module, CrossEntropyLoss
 from torch.optim import Optimizer
+from torch.utils.data import DataLoader
 
 from avalanche.benchmarks.scenarios import Experience
 from avalanche.benchmarks.utils.data_loader import TaskBalancedDataLoader
 from avalanche.models import DynamicModule
 from avalanche.models.dynamic_optimizers import reset_optimizer
 from avalanche.models.utils import avalanche_forward
-from avalanche.training.plugins.evaluation import default_logger
-from typing import TYPE_CHECKING
-
 from avalanche.training.plugins import EvaluationPlugin
+from avalanche.training.plugins.evaluation import default_logger
+from haxio.data.sampler import LimitedLengthRandomSampler
 
 if TYPE_CHECKING:
     from avalanche.core import StrategyCallbacks
     from avalanche.training.plugins import StrategyPlugin
-
 
 logger = logging.getLogger(__name__)
 
@@ -182,6 +180,8 @@ class BaseStrategy:
         self._warn_for_disabled_plugins_callbacks()
         self._warn_for_disabled_metrics_callbacks()
 
+        self._num_samplers = 1000
+
     @property
     def is_eval(self):
         """ True if the strategy is in evaluation mode. """
@@ -271,7 +271,7 @@ class BaseStrategy:
         self.make_optimizer()
 
         self.before_training_exp(**kwargs)
-        
+
         do_final = True
         if self.eval_every > 0 and \
                 (self.train_epochs - 1) % self.eval_every == 0:
@@ -306,7 +306,7 @@ class BaseStrategy:
             self.is_training)
 
         if (self.eval_every == 0 and do_final) or \
-           (self.eval_every > 0 and self.epoch % self.eval_every == 0):
+                (self.eval_every > 0 and self.epoch % self.eval_every == 0):
             # in the first case we are outside epoch loop
             # in the second case we are within epoch loop
             for exp in eval_streams:
@@ -390,8 +390,12 @@ class BaseStrategy:
             oversample_small_groups=True,
             num_workers=num_workers,
             batch_size=self.train_mb_size,
-            shuffle=shuffle,
-            pin_memory=pin_memory)
+            # shuffle=shuffle,
+            pin_memory=pin_memory,
+            sampler=LimitedLengthRandomSampler(self.adapted_dataset, num_samples=self._num_samplers, shuffle=True))
+
+    def set_num_samplers_per_epoch(self, num_samplers: int):
+        self._num_samplers = num_samplers
 
     def make_eval_dataloader(self, num_workers=0, pin_memory=True,
                              **kwargs):
@@ -620,10 +624,10 @@ class BaseStrategy:
                 callback = getattr(plugin, disabled_callback_name)
                 callback_class = callback.__qualname__.split('.')[0]
                 if callback_class not in (
-                    "StrategyPlugin",
-                    "PluginMetric",
-                    "EvaluationPlugin",
-                    "GenericPluginMetric",
+                        "StrategyPlugin",
+                        "PluginMetric",
+                        "EvaluationPlugin",
+                        "GenericPluginMetric",
                 ):
                     logger.warning(
                         f"{plugin.__class__.__name__} seems to use "

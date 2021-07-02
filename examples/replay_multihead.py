@@ -29,12 +29,13 @@ from torchvision.transforms import ToTensor, RandomCrop
 
 from avalanche.benchmarks import nc_benchmark
 from avalanche.evaluation.metrics import forgetting_metrics, \
-    accuracy_metrics, loss_metrics
+    accuracy_metrics
 from avalanche.logging import InteractiveLogger
-from avalanche.models import SimpleMLP
 from avalanche.training.plugins import EvaluationPlugin
 from avalanche.training.plugins import ReplayPlugin
 from avalanche.training.strategies import Naive
+from haxio.models.multihead import resnet18
+from haxio.utils import colored_print
 
 
 def main(args):
@@ -63,11 +64,14 @@ def main(args):
     mnist_test = MNIST(root=expanduser("~") + "/.avalanche/data/mnist/",
                        train=False, download=True, transform=test_transform)
     scenario = nc_benchmark(
-        mnist_train, mnist_test, n_batches, task_labels=False, seed=1234)
+        mnist_train, mnist_test, n_batches, task_labels=True, seed=1234, class_ids_from_zero_in_each_exp=True)
     # ---------
 
     # MODEL CREATION
-    model = SimpleMLP(num_classes=scenario.n_classes)
+    model = resnet18(input_dim=1)
+
+    train_stream = scenario.train_stream
+    test_stream = scenario.test_stream
 
     # choose some metrics and evaluation method
     interactive_logger = InteractiveLogger()
@@ -75,7 +79,7 @@ def main(args):
     eval_plugin = EvaluationPlugin(
         accuracy_metrics(
             minibatch=True, epoch=True, experience=True, stream=True),
-        loss_metrics(minibatch=True, epoch=True, experience=True, stream=True),
+        # loss_metrics(minibatch=True, epoch=True, experience=True, stream=True),
         forgetting_metrics(experience=True),
         loggers=[interactive_logger])
 
@@ -84,20 +88,20 @@ def main(args):
                         CrossEntropyLoss(),
                         train_mb_size=100, train_epochs=4, eval_mb_size=100,
                         device=device,
-                        plugins=[ReplayPlugin(mem_size=10)],
+                        plugins=[ReplayPlugin(mem_size=100)],
                         evaluator=eval_plugin
                         )
 
     # TRAINING LOOP
     print('Starting experiment...')
     results = []
-    for experience in scenario.train_stream:
+    for i, experience in enumerate(train_stream):
         print("Start of experience ", experience.current_experience)
         cl_strategy.train(experience)
         print('Training completed')
-
         print('Computing accuracy on the whole test set')
-        results.append(cl_strategy.eval(scenario.test_stream))
+        with colored_print():
+            results.append(cl_strategy.eval(test_stream[:i + 1]))
 
 
 if __name__ == '__main__':

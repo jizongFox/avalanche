@@ -27,9 +27,9 @@ from torch.optim import Adam
 from avalanche.benchmarks.classic import SplitMNIST
 from avalanche.evaluation.metrics import forgetting_metrics, accuracy_metrics
 from avalanche.logging import InteractiveLogger
-from avalanche.models import MTSimpleMLP
 from avalanche.training.plugins import EvaluationPlugin
-from avalanche.training.strategies import EWC, Naive
+from avalanche.training.strategies import Naive
+from haxio.models.multihead import resnet18
 
 
 def main(args):
@@ -38,7 +38,7 @@ def main(args):
                           if torch.cuda.is_available() and
                              args.cuda >= 0 else "cpu")
     # model
-    model = MTSimpleMLP()
+    model = resnet18(input_dim=1)
 
     # CL Benchmark Creation
     scenario = SplitMNIST(n_experiences=5, return_task_id=True)
@@ -59,16 +59,16 @@ def main(args):
         loggers=[interactive_logger])
 
     # Choose a CL strategy
-    strategy = EWC(
+    strategy = Naive(
         model=model, optimizer=optimizer, criterion=criterion,
         train_mb_size=128, train_epochs=3, eval_mb_size=128, device=device,
         evaluator=eval_plugin,
-        ewc_lambda=0.4)
+    )
 
     # train and test loop
-    for train_task in train_stream:
+    for i, train_task in enumerate(train_stream):
         strategy.train(train_task)
-        strategy.eval(test_stream)
+        strategy.eval(test_stream[:i + 1])
 
 
 if __name__ == '__main__':

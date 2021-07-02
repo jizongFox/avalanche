@@ -21,9 +21,9 @@ from torchvision.transforms import ToTensor, Normalize, Compose, \
 from avalanche.benchmarks.classic.classic_benchmarks_utils import \
     check_vision_benchmark
 from avalanche.benchmarks.datasets import default_dataset_location
+from avalanche.benchmarks.datasets.core50.core50 import CORe50Dataset
 from avalanche.benchmarks.scenarios.generic_benchmark_creation import \
     create_generic_benchmark_from_filelists
-from avalanche.benchmarks.datasets.core50.core50 import CORe50Dataset
 
 nbatch = {
     'ni': 8,
@@ -42,7 +42,6 @@ scen2dirs = {
     'nicv2_196': "NIC_v2_196/",
     'nicv2_391': "NIC_v2_391/"
 }
-
 
 normalize = Normalize(mean=[0.485, 0.456, 0.406],
                       std=[0.229, 0.224, 0.225])
@@ -122,7 +121,7 @@ def CORe50(
         dataset_root = default_dataset_location('core50')
 
     # Download the dataset and initialize filelists
-    core_data = CORe50Dataset(root=dataset_root, mini=mini)
+    core_data = CORe50Dataset(root=dataset_root, mini=mini, download=True)
 
     root = core_data.root
     if mini:
