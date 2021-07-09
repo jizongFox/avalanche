@@ -8,7 +8,7 @@ from avalanche.logging import InteractiveLogger
 from avalanche.training import Naive
 from avalanche.training.plugins import EvaluationPlugin
 from haxio.models import resnet18
-from haxio.script.utils import HaxioDataset
+from haxio.script.utils import HaxioDataset, dataset_descript
 from haxio.utils import colored_print
 
 """
@@ -55,14 +55,14 @@ def main():
     strategy = Naive(model=model, optimizer=optimizer, criterion=criterion,
                      train_mb_size=128, train_epochs=8, eval_mb_size=128, device=device,
                      evaluator=eval_plugin)
-    strategy.set_num_samplers_per_epoch(10000)
+    strategy.set_num_samplers_per_epoch(1000)
 
     # train on the selected scenario with the chosen strategy
     print('Starting experiment...')
     results = []
     for i, experience in enumerate(scenario.train_stream):
         print("Start training on experience ", experience.current_experience)
-
+        dataset_descript(experience)
         strategy.train(experience)
         print("End training on experience", experience.current_experience)
         with colored_print():

@@ -1,15 +1,18 @@
-import torch
-from os.path import expanduser
 import argparse
+from os.path import expanduser
+
+import torch
 from torchvision.datasets import MNIST
 from torchvision.transforms import ToTensor
+
 from avalanche.benchmarks import PermutedMNIST, nc_benchmark
-from avalanche.training.strategies import EWC
-from avalanche.models import SimpleMLP
 from avalanche.evaluation.metrics import forgetting_metrics, \
     accuracy_metrics, loss_metrics, bwt_metrics
 from avalanche.logging import InteractiveLogger, TensorboardLogger
+from avalanche.models import SimpleMLP
 from avalanche.training.plugins import EvaluationPlugin
+from avalanche.training.strategies import EWC
+from haxio.utils import colored_print
 
 """
 This example tests EWC on Split MNIST and Permuted MNIST.
@@ -36,7 +39,7 @@ def main(args):
     assert args.cuda == -1 or args.cuda >= 0, "cuda must be -1 or >= 0."
     device = torch.device(f"cuda:{args.cuda}"
                           if torch.cuda.is_available() and
-                          args.cuda >= 0 else "cpu")
+                             args.cuda >= 0 else "cpu")
     print(f'Using device: {device}')
 
     # create scenario
@@ -69,17 +72,19 @@ def main(args):
                    args.ewc_mode, decay_factor=args.decay_factor,
                    train_epochs=args.epochs, device=device,
                    train_mb_size=args.minibatch_size, evaluator=eval_plugin)
+    strategy.set_num_samplers_per_epoch(10000)
 
     # train on the selected scenario with the chosen strategy
     print('Starting experiment...')
     results = []
-    for experience in scenario.train_stream:
+    for i, experience in enumerate(scenario.train_stream):
         print("Start training on experience ", experience.current_experience)
 
         strategy.train(experience)
         print("End training on experience", experience.current_experience)
         print('Computing accuracy on the test set')
-        results.append(strategy.eval(scenario.test_stream[:]))
+        with colored_print():
+            results.append(strategy.eval(scenario.test_stream[:i + 1]))
 
 
 if __name__ == '__main__':

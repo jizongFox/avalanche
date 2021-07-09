@@ -87,7 +87,7 @@ class InteractiveLogger(TextLogger):
     @property
     def _progress(self):
         if self._pbar is None:
-            self._pbar = tqdm(leave=True, position=0, file=sys.stdout)
+            self._pbar = tqdm(leave=False, position=0, file=sys.stdout)
         return self._pbar
 
     def _end_progress(self):

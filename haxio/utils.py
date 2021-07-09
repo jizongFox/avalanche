@@ -1,4 +1,5 @@
 import builtins as __builtin__
+import sys
 from contextlib import contextmanager
 from typing import Iterable
 
@@ -72,6 +73,7 @@ def item2str(item):
 
 @contextmanager
 def colored_print(color: str = "green"):
+    sys.stdout.flush()
     o_print = __builtin__.print
 
     def colored_print(*args, **kwargs):

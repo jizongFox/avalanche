@@ -24,12 +24,14 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.optim import Adam
 
-from avalanche.benchmarks.classic import SplitMNIST
+from avalanche.benchmarks import nc_benchmark
 from avalanche.evaluation.metrics import forgetting_metrics, accuracy_metrics
 from avalanche.logging import InteractiveLogger
 from avalanche.training.plugins import EvaluationPlugin
 from avalanche.training.strategies import Naive
 from haxio.models.multihead import resnet18
+from haxio.script.utils import HaxioDataset
+from haxio.utils import colored_print
 
 
 def main(args):
@@ -37,11 +39,14 @@ def main(args):
     device = torch.device(f"cuda:{args.cuda}"
                           if torch.cuda.is_available() and
                              args.cuda >= 0 else "cpu")
-    # model
-    model = resnet18(input_dim=1)
+    train_set, val_set = HaxioDataset("/home/jizong/Workspace/avalanche/haxio/.data/medxl_v2", train_aug=True)
+    scenario = nc_benchmark(train_set, val_set, n_experiences=3, task_labels=True, shuffle=False,
+                            class_ids_from_zero_in_each_exp=True)
+    # ---------
 
-    # CL Benchmark Creation
-    scenario = SplitMNIST(n_experiences=5, return_task_id=True)
+    # MODEL CREATION
+    model = resnet18(input_dim=3)
+
     train_stream = scenario.train_stream
     test_stream = scenario.test_stream
 
@@ -61,14 +66,21 @@ def main(args):
     # Choose a CL strategy
     strategy = Naive(
         model=model, optimizer=optimizer, criterion=criterion,
-        train_mb_size=128, train_epochs=3, eval_mb_size=128, device=device,
+        train_mb_size=128, train_epochs=5, eval_mb_size=128, device=device,
         evaluator=eval_plugin,
     )
+    strategy.set_num_samplers_per_epoch(10000)
 
-    # train and test loop
-    for i, train_task in enumerate(train_stream):
-        strategy.train(train_task)
-        strategy.eval(test_stream[:i + 1])
+    # TRAINING LOOP
+    print('Starting experiment...')
+    results = []
+    for i, experience in enumerate(train_stream):
+        print("Start of experience ", experience.current_experience)
+        strategy.train(experience)
+        print('Training completed')
+        print('Computing accuracy on the whole test set')
+        with colored_print():
+            results.append(strategy.eval(test_stream[:i + 1]))
 
 
 if __name__ == '__main__':

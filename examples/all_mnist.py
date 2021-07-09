@@ -18,8 +18,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import torch
 import argparse
+
+import torch
 from torch.nn import CrossEntropyLoss
 from torch.optim import SGD
 
@@ -27,13 +28,14 @@ from avalanche.benchmarks.classic import PermutedMNIST, RotatedMNIST, \
     SplitMNIST
 from avalanche.models import SimpleMLP
 from avalanche.training.strategies import Naive
+from haxio.utils import colored_print
 
 
 def main(args):
     # Device config
     device = torch.device(f"cuda:{args.cuda}"
                           if torch.cuda.is_available() and
-                          args.cuda >= 0 else "cpu")
+                             args.cuda >= 0 else "cpu")
 
     # model
     model = SimpleMLP(num_classes=10)
@@ -59,13 +61,15 @@ def main(args):
     cl_strategy = Naive(
         model, optimizer, criterion, train_mb_size=32, train_epochs=2,
         eval_mb_size=32, device=device)
+    cl_strategy.set_num_samplers_per_epoch(10000)
 
     # train and test loop
     results = []
-    for train_task in train_stream:
+    for i, train_task in enumerate(train_stream):
         print("Current Classes: ", train_task.classes_in_this_experience)
         cl_strategy.train(train_task)
-        results.append(cl_strategy.eval(test_stream))
+        with colored_print():
+            results.append(cl_strategy.eval(test_stream))
 
 
 if __name__ == '__main__':

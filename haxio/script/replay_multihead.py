@@ -63,9 +63,9 @@ def main(args):
     # CREATE THE STRATEGY INSTANCE (NAIVE)
     cl_strategy = Naive(model, torch.optim.Adam(model.parameters(), lr=0.00001),
                         CrossEntropyLoss(),
-                        train_mb_size=100, train_epochs=20, eval_mb_size=100,
+                        train_mb_size=128, train_epochs=5, eval_mb_size=100,
                         device=device,
-                        plugins=[ReplayPlugin(mem_size=5)],
+                        plugins=[ReplayPlugin(mem_size=args.replay_num)],
                         evaluator=eval_plugin
                         )
     cl_strategy.set_num_samplers_per_epoch(10000)
@@ -86,5 +86,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--cuda', type=int, default=0,
                         help='Select zero-indexed cuda device. -1 to use CPU.')
+    parser.add_argument("--replay_num", type=int, default=10, )
     args = parser.parse_args()
     main(args)

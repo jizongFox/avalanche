@@ -64,11 +64,18 @@ def main(args):
         train_mb_size=128, train_epochs=3, eval_mb_size=128, device=device,
         evaluator=eval_plugin,
         ewc_lambda=0.4)
+    # strategy = Naive(
+    #     model=model, optimizer=optimizer, criterion=criterion,
+    #     train_mb_size=128, train_epochs=3, eval_mb_size=128, device=device,
+    #     evaluator=eval_plugin,
+    # )
 
+    strategy.set_num_samplers_per_epoch(10000)
     # train and test loop
-    for train_task in train_stream:
+    for i, train_task in enumerate(train_stream):
         strategy.train(train_task)
-        strategy.eval(test_stream)
+        with colored_print():
+            strategy.eval(test_stream[:i + 1])
 
 
 if __name__ == '__main__':
